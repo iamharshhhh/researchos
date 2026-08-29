@@ -1,0 +1,27 @@
+import os
+from dotenv import load_dotenv
+import google.generativeai as genai
+
+# Load environment variables
+load_dotenv()
+
+# API Keys & DB URLs
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg2://postgres:postgres@localhost:5432/researchos")
+
+# Model Configuration
+MODEL_NAME = "gemini-3.5-flash-lite"
+EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
+
+# Database & Storage Paths
+DB_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
+CHROMA_PATH = os.path.join(DB_DIR, "chroma_db")
+PAPERS_DIR = os.path.join(DB_DIR, "papers")
+os.makedirs(PAPERS_DIR, exist_ok=True)
+
+def configure_gemini():
+    """Configure the Gemini API client for Generation & RAG."""
+    if not GEMINI_API_KEY:
+        raise ValueError("GEMINI_API_KEY is not set in the environment.")
+    
+    genai.configure(api_key=GEMINI_API_KEY)

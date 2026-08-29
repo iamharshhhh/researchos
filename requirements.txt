@@ -1,0 +1,15 @@
+streamlit==1.61.1
+google-generativeai==0.8.6
+pymupdf==1.28.2
+python-dotenv==1.2.2
+sqlalchemy==2.0.52
+psycopg2-binary==2.9.12
+pandas==3.0.5
+numpy==2.5.2
+plotly==6.9.0
+requests==2.34.2
+chromadb==1.5.9
+sentence-transformers==6.0.0
+networkx==3.6.1
+pillow==12.3.0
+pydantic==2.13.4
