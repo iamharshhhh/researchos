@@ -3,7 +3,7 @@ import re
 import json
 import pymupdf  # PyMuPDF
 import google.generativeai as genai
-from backend.config import MODEL_NAME, configure_gemini
+from backend.config import MODEL_NAME, FALLBACK_MODELS, configure_gemini
 
 def extract_text_from_pdf(pdf_path: str, max_pages: int = None) -> str:
     """Extract all text from a PDF file (optionally capped at max_pages)."""
@@ -139,14 +139,6 @@ def extract_paper_metadata(pdf_path: str, fallback_title: str = "") -> dict:
     # 2. Precision LLM Extraction via Gemini
     try:
         configure_gemini()
-        model = genai.GenerativeModel(
-            MODEL_NAME,
-            generation_config={
-                "response_mime_type": "application/json",
-                "temperature": 0.0  # Deterministic precision for exact metadata extraction
-            }
-        )
-
         prompt = f"""You are an elite academic bibliographer and metadata extraction engine.
 Analyze the following front matter text of a research paper and extract the exact academic metadata with 100% precision into the specified JSON format.
 
@@ -183,8 +175,25 @@ JSON Output Schema:
     "publisher": "string"
 }}
 """
-        response = model.generate_content(prompt)
-        parsed = json.loads(response.text)
+        parsed = None
+        for m_name in FALLBACK_MODELS:
+            try:
+                model = genai.GenerativeModel(
+                    m_name,
+                    generation_config={
+                        "response_mime_type": "application/json",
+                        "temperature": 0.0  # Deterministic precision for exact metadata extraction
+                    }
+                )
+                response = model.generate_content(prompt)
+                if response and response.text:
+                    parsed = json.loads(response.text)
+                    break
+            except Exception:
+                continue
+                
+        if not parsed:
+            return default_meta
 
         # Merge and clean results
         if parsed.get("title") and parsed["title"].strip():

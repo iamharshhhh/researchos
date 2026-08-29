@@ -5,7 +5,7 @@ import google.generativeai as genai
 from backend.database import get_user_documents, save_user_note, log_user_activity
 from backend.config import MODEL_NAME
 from backend.db import search_documents
-from backend.rag_pipeline import clean_academic_response
+from backend.rag_pipeline import clean_academic_response, call_gemini_with_fallback
 
 # Check authentication
 if 'logged_in' not in st.session_state or not st.session_state['logged_in']:
@@ -289,9 +289,7 @@ Formatting Guidelines:
 - Format all equations and mathematical variables in LaTeX ($...$ or $$...$$).
 - Never start with self-introductions ("I am..."). Start directly with 📐 Primary Extracted Mathematical Formulation."""
 
-    model = genai.GenerativeModel(MODEL_NAME)
-    response = model.generate_content(prompt)
-    raw = response.text if response else ""
+    raw = call_gemini_with_fallback(prompt)
     return clean_academic_response(raw)
 
 # ----------------- Main Input: Extract from Library Paper -----------------

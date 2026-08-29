@@ -10,7 +10,7 @@ try:
 except Exception:
     pass
 
-def call_gemini_with_fallback(prompt: str) -> str:
+def call_gemini_with_fallback(prompt) -> str:
     """Invokes Gemini with automatic model fallback across supported models."""
     import time
     configure_gemini()
@@ -324,10 +324,7 @@ STYLE & FORMATTING GUIDELINES (Gemini Academic Style):
 3. **Mathematical Precision**: Format all formulas, loss functions, vectors, and variables in clean LaTeX (`$...$` for inline, `$$...$$` for block equations).
 4. **Fluid Prose**: Write with intellectual depth, clarity, and precision. DO NOT include bracketed database IDs (like [991XXX]).
 """
-    model = genai.GenerativeModel(MODEL_NAME)
-    response = model.generate_content(prompt)
-    
-    raw = response.text if response else ""
+    raw = call_gemini_with_fallback(prompt)
     return clean_academic_response(raw)
 
 def generate_multi_paper_comparison(

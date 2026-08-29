@@ -5,7 +5,7 @@ import google.generativeai as genai
 from backend.database import get_user_documents, save_user_note, log_user_activity
 from backend.config import MODEL_NAME
 from backend.db import search_documents
-from backend.rag_pipeline import clean_academic_response
+from backend.rag_pipeline import clean_academic_response, call_gemini_with_fallback
 
 # Check authentication
 if 'logged_in' not in st.session_state or not st.session_state['logged_in']:
@@ -256,9 +256,7 @@ Formatting Guidelines:
 - Format all equations and mathematical variables in LaTeX ($...$).
 - Never start with self-introductions ("I am..."). Start directly with 💡 Comprehensive Direct Synthesis."""
 
-    model = genai.GenerativeModel(MODEL_NAME)
-    res = model.generate_content(prompt)
-    raw = res.text if res else ""
+    raw = call_gemini_with_fallback(prompt)
     return clean_academic_response(raw)
 
 # Helper: Auto-detect Quick-Search Topics from Library with AI (Cached)
@@ -291,9 +289,7 @@ Output ONLY the 5 topics as a clean numbered list:
 5. Topic 5"""
 
     try:
-        model = genai.GenerativeModel(MODEL_NAME)
-        res = model.generate_content(prompt)
-        text = res.text if res else ""
+        text = call_gemini_with_fallback(prompt)
         topics = []
         for line in text.split("\n"):
             line = re.sub(r'^\d+[\.\)]\s*', '', line.strip())

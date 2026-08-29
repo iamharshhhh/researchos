@@ -5,7 +5,7 @@ import google.generativeai as genai
 from backend.database import get_user_documents, save_user_note, log_user_activity
 from backend.config import MODEL_NAME
 from backend.db import search_documents
-from backend.rag_pipeline import clean_academic_response
+from backend.rag_pipeline import clean_academic_response, call_gemini_with_fallback
 
 # Check authentication
 if 'logged_in' not in st.session_state or not st.session_state['logged_in']:
@@ -210,9 +210,7 @@ Rules:
 4. If RIS is requested, output standard RIS tags (`TY  - `, `TI  - `, `AU  - `, `ER  - `).
 5. Do NOT include any conversational commentary, introductory text (e.g. "Here is the citation:"), or explanatory notes. Output ONLY the citation."""
 
-    model = genai.GenerativeModel(MODEL_NAME)
-    response = model.generate_content(prompt)
-    raw = response.text if response else ""
+    raw = call_gemini_with_fallback(prompt)
     return clean_academic_response(raw)
 
 # ----------------- TAB 1: Library Paper -----------------

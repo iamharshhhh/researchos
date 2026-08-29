@@ -9,7 +9,7 @@ import pymupdf
 import google.generativeai as genai
 from backend.database import get_user_documents, save_user_note, log_user_activity
 from backend.config import MODEL_NAME
-from backend.rag_pipeline import clean_academic_response
+from backend.rag_pipeline import clean_academic_response, call_gemini_with_fallback
 
 # Authentication check
 if 'logged_in' not in st.session_state or not st.session_state['logged_in']:
@@ -291,9 +291,7 @@ Formatting Guidelines:
 - Elite, authoritative academic prose.
 - Never include self-introductions ("I am..."). Start directly with 🏛️ Foundational Intellectual Lineage."""
 
-    model = genai.GenerativeModel(MODEL_NAME)
-    res = model.generate_content(prompt)
-    raw = res.text if res else ""
+    raw = call_gemini_with_fallback(prompt)
     return clean_academic_response(raw)
 
 # ----------------- Controls Row -----------------

@@ -8,7 +8,7 @@ import google.generativeai as genai
 from backend.database import get_user_documents, save_user_note, log_user_activity
 from backend.config import MODEL_NAME
 from backend.db import search_documents
-from backend.rag_pipeline import clean_academic_response
+from backend.rag_pipeline import clean_academic_response, call_gemini_with_fallback
 
 # Check authentication
 if 'logged_in' not in st.session_state or not st.session_state['logged_in']:
@@ -379,16 +379,13 @@ Formatting Guidelines:
 - Write in elite, rigorous academic prose. Format all math symbols in LaTeX ($...$).
 - Never start with self-introductions ("I am..."). Start directly with 💡 Executive Visual Summary."""
 
-    model = genai.GenerativeModel(MODEL_NAME)
-    
     inputs = []
     if images:
         for img in images[:2]:  # Send top relevant figures to Gemini Vision
             inputs.append(img)
     inputs.append(prompt)
     
-    response = model.generate_content(inputs)
-    raw = response.text if response else ""
+    raw = call_gemini_with_fallback(inputs)
     return clean_academic_response(raw)
 
 # Tabs: Upload Figure Image vs Search from Library Paper
