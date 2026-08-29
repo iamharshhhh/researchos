@@ -11,7 +11,8 @@ except Exception:
     pass
 
 def call_gemini_with_fallback(prompt: str) -> str:
-    """Invokes Gemini with automatic model fallback."""
+    """Invokes Gemini with automatic model fallback across supported models."""
+    import time
     configure_gemini()
     last_err = None
     for model_name in FALLBACK_MODELS:
@@ -22,6 +23,7 @@ def call_gemini_with_fallback(prompt: str) -> str:
                 return response.text
         except Exception as e:
             last_err = e
+            time.sleep(0.3)
             continue
     if last_err:
         raise last_err
