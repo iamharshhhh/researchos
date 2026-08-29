@@ -1,11 +1,31 @@
 import os
 import re
 import google.generativeai as genai
-from backend.config import MODEL_NAME, configure_gemini
+from backend.config import MODEL_NAME, FALLBACK_MODELS, configure_gemini
 from backend.db import search_documents
 
 # Ensure Gemini is configured
-configure_gemini()
+try:
+    configure_gemini()
+except Exception:
+    pass
+
+def call_gemini_with_fallback(prompt: str) -> str:
+    """Invokes Gemini with automatic model fallback."""
+    configure_gemini()
+    last_err = None
+    for model_name in FALLBACK_MODELS:
+        try:
+            model = genai.GenerativeModel(model_name)
+            response = model.generate_content(prompt)
+            if response and response.text:
+                return response.text
+        except Exception as e:
+            last_err = e
+            continue
+    if last_err:
+        raise last_err
+    return ""
 
 def fix_markdown_tables(text: str) -> str:
     """Ensures markdown tables have proper newline breaks and valid syntax."""
@@ -225,10 +245,7 @@ Instructions: Jump directly into the answer without self-introductions unless ex
         prompt = build_prompt(query, retrieved_sources, research_mode=research_mode)
     
     # 3. Generate
-    model = genai.GenerativeModel(MODEL_NAME)
-    response = model.generate_content(prompt)
-    
-    raw_text = response.text if response else ""
+    raw_text = call_gemini_with_fallback(prompt)
     cleaned_text = clean_academic_response(raw_text, query=query)
     
     return {
@@ -436,10 +453,7 @@ Formatting Guidelines:
 - Clean bullet points with bold sub-terms. Format all equations and mathematical terms in clean LaTeX ($...$ or $$...$$).
 - DO NOT insert bracketed database numbers (like [991XXX]). Write in fluent, elite academic prose.
 """
-    model = genai.GenerativeModel(MODEL_NAME)
-    response = model.generate_content(prompt)
-    
-    raw = response.text if response else ""
+    raw = call_gemini_with_fallback(prompt)
     return clean_academic_response(raw)
 
 def generate_literature_review(
@@ -504,8 +518,5 @@ Formatting Guidelines:
 - Clean bullet points with bold sub-terms. Format all equations in LaTeX ($...$).
 - DO NOT insert bracketed database numbers (like [991XXX]). Write in fluent, elite academic prose.
 """
-    model = genai.GenerativeModel(MODEL_NAME)
-    response = model.generate_content(prompt)
-    
-    raw = response.text if response else ""
+    raw = call_gemini_with_fallback(prompt)
     return clean_academic_response(raw)

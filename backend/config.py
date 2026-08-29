@@ -25,7 +25,8 @@ if not DATABASE_URL:
     DATABASE_URL = "postgresql+psycopg2://postgres:postgres@localhost:5432/researchos"
 
 # Model Configuration
-MODEL_NAME = "gemini-3.5-flash-lite"
+MODEL_NAME = "gemini-3.6-flash"
+FALLBACK_MODELS = ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-flash-latest", "gemini-pro-latest"]
 EMBEDDING_MODEL_NAME = "all-MiniLM-L6-v2"
 
 # Database & Storage Paths
