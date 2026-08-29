@@ -5,16 +5,22 @@ from backend.config import CHROMA_PATH, EMBEDDING_MODEL_NAME
 # Initialize ChromaDB persistent client
 chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
 
-# Using all-MiniLM-L6-v2 embedding function locally
-minilm_ef = embedding_functions.SentenceTransformerEmbeddingFunction(
-    model_name=EMBEDDING_MODEL_NAME
-)
+_minilm_ef = None
+
+def get_embedding_function():
+    """Lazy-loads the SentenceTransformer embedding function."""
+    global _minilm_ef
+    if _minilm_ef is None:
+        _minilm_ef = embedding_functions.SentenceTransformerEmbeddingFunction(
+            model_name=EMBEDDING_MODEL_NAME
+        )
+    return _minilm_ef
 
 def get_or_create_collection(collection_name: str = "research_papers"):
-    """Returns the ChromaDB collection with all-MiniLM-L6-v2 embedding function."""
+    """Returns the ChromaDB collection."""
     return chroma_client.get_or_create_collection(
         name=collection_name,
-        embedding_function=minilm_ef
+        embedding_function=get_embedding_function()
     )
 
 def add_documents_to_db(documents: list[dict], collection_name: str = "research_papers"):
@@ -68,9 +74,9 @@ def delete_documents_by_doc_id(doc_id: str, collection_name: str = "research_pap
         print(f"Error deleting ChromaDB chunks for doc_id {doc_id}: {e}")
 
 def get_all_chunks_for_doc_id(doc_id: str, limit: int = 16, collection_name: str = "research_papers") -> list[str]:
-    """Retrieves stored text chunks for a specific paper doc_id."""
+    """Retrieves stored text chunks for a specific paper doc_id without loading embedding models."""
     try:
-        collection = get_or_create_collection(collection_name)
+        collection = chroma_client.get_or_create_collection(name=collection_name)
         results = collection.get(
             where={"doc_id": doc_id},
             limit=limit
