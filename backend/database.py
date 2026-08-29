@@ -9,9 +9,16 @@ from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 
 load_dotenv()
 
-# Database URL from environment or default to local PostgreSQL
-DEFAULT_PG_URL = "postgresql+psycopg2://postgres:postgres@localhost:5432/researchos"
-DATABASE_URL = os.getenv("DATABASE_URL", DEFAULT_PG_URL)
+# Database URL from environment or Streamlit secrets
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    try:
+        import streamlit as st
+        DATABASE_URL = st.secrets.get("DATABASE_URL")
+    except Exception:
+        pass
+if not DATABASE_URL:
+    DATABASE_URL = "postgresql+psycopg2://postgres:postgres@localhost:5432/researchos"
 
 Base = declarative_base()
 

@@ -7,7 +7,22 @@ load_dotenv()
 
 # API Keys & DB URLs
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg2://postgres:postgres@localhost:5432/researchos")
+if not GEMINI_API_KEY:
+    try:
+        import streamlit as st
+        GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY")
+    except Exception:
+        pass
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    try:
+        import streamlit as st
+        DATABASE_URL = st.secrets.get("DATABASE_URL")
+    except Exception:
+        pass
+if not DATABASE_URL:
+    DATABASE_URL = "postgresql+psycopg2://postgres:postgres@localhost:5432/researchos"
 
 # Model Configuration
 MODEL_NAME = "gemini-3.5-flash-lite"
@@ -21,7 +36,16 @@ os.makedirs(PAPERS_DIR, exist_ok=True)
 
 def configure_gemini():
     """Configure the Gemini API client for Generation & RAG."""
+    global GEMINI_API_KEY
     if not GEMINI_API_KEY:
-        raise ValueError("GEMINI_API_KEY is not set in the environment.")
+        GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+        if not GEMINI_API_KEY:
+            try:
+                import streamlit as st
+                GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY")
+            except Exception:
+                pass
+    if not GEMINI_API_KEY:
+        raise ValueError("GEMINI_API_KEY is not set in the environment or Streamlit Secrets.")
     
     genai.configure(api_key=GEMINI_API_KEY)
