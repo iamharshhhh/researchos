@@ -103,6 +103,16 @@ st.markdown("""
             padding-bottom: 3.5rem;
             margin: 0 auto;
         }
+        @media (max-width: 768px) {
+            .block-container {
+                padding: 1rem 0.6rem 3rem 0.6rem !important;
+                max-width: 100% !important;
+            }
+            div[data-testid="stChatMessage"] {
+                padding: 12px 14px !important;
+                font-size: 0.88rem !important;
+            }
+        }
         .empty-hero {
             text-align: center;
             padding: 32px 10px 18px 10px;
