@@ -44,47 +44,72 @@ def fix_markdown_tables(text: str) -> str:
     return fixed
 
 def fix_all_markdown_tables(text: str) -> str:
-    """Ensures markdown tables have proper continuous rows, no blank lines, and converts multiline cell bullets to <br>."""
+    """Ensures markdown tables have proper continuous rows, valid headers, and eliminates ugly ASCII box borders."""
     if not text:
         return ""
-        
-    # 1. If a heading or text is glued to the start of a table on the same line (e.g. "2. Matrix: | Symbol |"):
+    
+    # 1. Remove ASCII box border lines like +-----------------+ or +====+
+    text = re.sub(r'^\s*\+[-=+]+\s*$', '', text, flags=re.MULTILINE)
+    text = re.sub(r'<br>\s*\+[-=+]+\s*', ' ', text)
+    
+    # 2. If a heading or text is glued to the start of a table on the same line (e.g. "2. Matrix: | Symbol |"):
     text = re.sub(r'([^\n|]+:)\s*(\|)', r'\1\n\n\2', text)
     
-    # 2. Replace double pipe || with newline + single pipe
+    # 3. Replace double pipe || with newline + single pipe
     text = re.sub(r'\|\s*\|\s*', '|\n| ', text)
     
-    raw_lines = text.split('\n')
+    lines = [l.strip() for l in text.split('\n')]
     cleaned_lines = []
     in_table = False
+    table_rows = []
     
-    for line in raw_lines:
-        s = line.strip()
-        
-        # Check if line is a table row or delimiter
-        if s.startswith('|') and s.endswith('|'):
+    for line in lines:
+        if not line:
+            if in_table:
+                # Flush table
+                if table_rows:
+                    cleaned_lines.append("")
+                    for r_idx, r in enumerate(table_rows):
+                        cleaned_lines.append(r)
+                        # Inject markdown table delimiter if missing after header
+                        if r_idx == 0 and len(table_rows) > 1 and not re.match(r'^\s*\|?\s*:?-+:?\s*\|', table_rows[1]):
+                            num_cols = len([c for c in r.split('|') if c.strip()])
+                            cleaned_lines.append('| ' + ' | '.join([':---'] * max(num_cols, 2)) + ' |')
+                    cleaned_lines.append("")
+                    table_rows = []
+                in_table = False
+            continue
+            
+        if line.startswith('|') and (line.endswith('|') or '|' in line[1:]):
             in_table = True
-            cleaned_lines.append(s)
-        elif in_table and s.startswith('|'):
-            in_table = True
-            cleaned_lines.append(s)
-        elif in_table and s and not s.startswith('#') and not re.match(r'^\d+\.', s) and not s.startswith('==='):
-            # Inside a table cell, convert newline/bullet to <br>
-            if cleaned_lines:
-                prev = cleaned_lines.pop()
-                if prev.endswith('|'):
-                    prev = prev[:-1].rstrip() + '<br>' + s + ' |'
-                else:
-                    prev = prev + '<br>' + s
-                cleaned_lines.append(prev)
+            # Strip trailing/leading excess whitespace from pipe
+            cells = [c.strip() for c in line.strip('|').split('|')]
+            formatted_row = '| ' + ' | '.join(cells) + ' |'
+            table_rows.append(formatted_row)
         else:
-            if not s and in_table:
-                # Discard blank line inside an active table!
-                continue
-            else:
+            if in_table:
+                # Flush table before normal text line
+                if table_rows:
+                    cleaned_lines.append("")
+                    for r_idx, r in enumerate(table_rows):
+                        cleaned_lines.append(r)
+                        if r_idx == 0 and len(table_rows) > 1 and not re.match(r'^\s*\|?\s*:?-+:?\s*\|', table_rows[1]):
+                            num_cols = len([c for c in r.split('|') if c.strip()])
+                            cleaned_lines.append('| ' + ' | '.join([':---'] * max(num_cols, 2)) + ' |')
+                    cleaned_lines.append("")
+                    table_rows = []
                 in_table = False
             cleaned_lines.append(line)
             
+    if in_table and table_rows:
+        cleaned_lines.append("")
+        for r_idx, r in enumerate(table_rows):
+            cleaned_lines.append(r)
+            if r_idx == 0 and len(table_rows) > 1 and not re.match(r'^\s*\|?\s*:?-+:?\s*\|', table_rows[1]):
+                num_cols = len([c for c in r.split('|') if c.strip()])
+                cleaned_lines.append('| ' + ' | '.join([':---'] * max(num_cols, 2)) + ' |')
+        cleaned_lines.append("")
+        
     return '\n'.join(cleaned_lines)
 
 def clean_academic_response(raw_text: str, query: str = "") -> str:
@@ -451,6 +476,7 @@ CRITICAL RULES:
 
 Formatting Guidelines:
 - Clean bullet points with bold sub-terms. Format all equations and mathematical terms in clean LaTeX ($...$ or $$...$$).
+- Format all comparison tables as standard GitHub-Flavored Markdown tables (e.g. `| Dimension | Paper 1 | Paper 2 |\n| :--- | :--- | :--- |\n| **Topic** | Value | Value |`). NEVER use ASCII borders (`+---+`).
 - DO NOT insert bracketed database numbers (like [991XXX]). Write in fluent, elite academic prose.
 """
     raw = call_gemini_with_fallback(prompt)
