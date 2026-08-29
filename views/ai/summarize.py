@@ -384,7 +384,9 @@ if btn_generate:
             log_user_activity(user_email, "Summarizer", summary_type, f"Summary: {selected_paper['title']}", summary_res, selected_paper['id'])
             st.rerun()
         except Exception as e:
-            st.error(f"⚠️ Synthesis error: {e}\n\nPlease verify that your `GEMINI_API_KEY` is configured in Streamlit Cloud Secrets.")
+            st.error(f"⚠️ Synthesis error: {e}")
+            if st.button("🔄 Retry Synthesis", type="primary"):
+                st.rerun()
 
 # 6. Display Generated Summary
 if "last_summary" in st.session_state and st.session_state["last_summary"]:
