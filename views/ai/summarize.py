@@ -364,24 +364,27 @@ if "last_summary" not in st.session_state or not st.session_state["last_summary"
 # 5. Process Generation
 if btn_generate:
     with st.spinner(f"Analyzing '{selected_paper['title']}' & synthesizing {summary_type}..."):
-        summary_res = generate_paper_summary(
-            paper_title=selected_paper["title"],
-            doc_id=selected_paper["id"],
-            summary_type=summary_type,
-            target_length=target_length,
-            focus_topic=focus_topic
-        )
-        st.session_state["last_summary"] = {
-            "text": summary_res,
-            "paper_title": selected_paper["title"],
-            "doc_id": selected_paper["id"],
-            "domain": selected_paper.get("domain", "Academic Research"),
-            "mode": summary_type,
-            "length": target_length,
-            "created_at": time.time()
-        }
-        log_user_activity(user_email, "Summarizer", summary_type, f"Summary: {selected_paper['title']}", summary_res, selected_paper['id'])
-        st.rerun()
+        try:
+            summary_res = generate_paper_summary(
+                paper_title=selected_paper["title"],
+                doc_id=selected_paper["id"],
+                summary_type=summary_type,
+                target_length=target_length,
+                focus_topic=focus_topic
+            )
+            st.session_state["last_summary"] = {
+                "text": summary_res,
+                "paper_title": selected_paper["title"],
+                "doc_id": selected_paper["id"],
+                "domain": selected_paper.get("domain", "Academic Research"),
+                "mode": summary_type,
+                "length": target_length,
+                "created_at": time.time()
+            }
+            log_user_activity(user_email, "Summarizer", summary_type, f"Summary: {selected_paper['title']}", summary_res, selected_paper['id'])
+            st.rerun()
+        except Exception as e:
+            st.error(f"⚠️ Synthesis error: {e}\n\nPlease verify that your `GEMINI_API_KEY` is configured in Streamlit Cloud Secrets.")
 
 # 6. Display Generated Summary
 if "last_summary" in st.session_state and st.session_state["last_summary"]:
