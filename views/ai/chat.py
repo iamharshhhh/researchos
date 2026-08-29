@@ -99,25 +99,25 @@ st.markdown("""
     <style>
         .block-container {
             max-width: 960px;
-            padding-top: 1.5rem;
-            padding-bottom: 3.5rem;
+            padding-top: 1rem;
+            padding-bottom: 2rem;
             margin: 0 auto;
         }
         .empty-hero {
             text-align: center;
-            padding: 32px 10px 18px 10px;
+            padding: 16px 10px 14px 10px;
         }
         .empty-hero h2 {
-            font-size: 1.9rem;
+            font-size: 1.8rem;
             font-weight: 600;
             color: #f8fafc;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             letter-spacing: -0.02em;
         }
         .empty-hero p {
             color: #94a3b8;
-            font-size: 0.95rem;
-            margin-bottom: 18px;
+            font-size: 0.92rem;
+            margin-bottom: 16px;
         }
         /* Chat Message Typography & Spacing (Gemini Style) */
         div[data-testid="stChatMessage"] {
@@ -428,43 +428,44 @@ if "messages" not in st.session_state or st.session_state.get("last_loaded_sessi
             "citations": citations_data
         })
 
-# 4. Scrollable Conversation Container
-chat_box = st.container(height=540, border=False)
+# 4. Conversation Flow
+clicked_prompt = None
 
-with chat_box:
-    # Empty State Hero with 4 Aligned Research Agent Suggestion Cards
-    clicked_prompt = None
-    if len(st.session_state.messages) == 0:
-        st.markdown("""
-            <div class="empty-hero">
-                <h2>What would you like to research today?</h2>
-                <p>Select a specialized Research Agent below or ask any question about your papers.</p>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        # 4 Perfectly-Aligned Suggestion Cards
-        col1, col2 = st.columns(2)
-        
-        q_lit = "Conduct a comprehensive literature review synthesizing the core methodology, architecture, and theoretical foundations."
-        q_gap = "Identify critical research gaps, unaddressed limitations, and future work opportunities."
-        q_idea = "Brainstorm novel, publishable research hypotheses and hybrid methodology ideas."
-        q_exp = "Design a rigorous empirical experiment protocol, benchmark baselines, and ablation study."
-        
-        with col1:
-            if st.button("📖 **Literature Review Synthesis**\n\nSynthesize related works, thematic taxonomies & cross-paper trends", use_container_width=True, key="sugg_1"):
-                st.session_state["agent_mode"] = "📖 Literature Review"
-                clicked_prompt = q_lit
-            if st.button("💡 **Novel Research Ideas**\n\nBrainstorm high-impact research hypotheses & hybrid methodologies", use_container_width=True, key="sugg_2"):
-                st.session_state["agent_mode"] = "💡 Research Ideas"
-                clicked_prompt = q_idea
-        with col2:
-            if st.button("🔬 **Research Gaps & Limitations**\n\nIdentify unresolved challenges, bottlenecks & future directions", use_container_width=True, key="sugg_3"):
-                st.session_state["agent_mode"] = "🔬 Research Gaps"
-                clicked_prompt = q_gap
-            if st.button("🧪 **Experimental Design & Protocol**\n\nStructure benchmark baselines, datasets, ablations & evaluation metrics", use_container_width=True, key="sugg_4"):
-                st.session_state["agent_mode"] = "🧪 Experiment Planner"
-                clicked_prompt = q_exp
-    else:
+if len(st.session_state.messages) == 0:
+    # Render Empty State directly in page flow (Zero scrollbars)
+    st.markdown("""
+        <div class="empty-hero">
+            <h2>What would you like to research today?</h2>
+            <p>Select a specialized Research Agent below or ask any question about your papers.</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # 4 Perfectly-Aligned Suggestion Cards
+    col1, col2 = st.columns(2)
+    
+    q_lit = "Conduct a comprehensive literature review synthesizing the core methodology, architecture, and theoretical foundations."
+    q_gap = "Identify critical research gaps, unaddressed limitations, and future work opportunities."
+    q_idea = "Brainstorm novel, publishable research hypotheses and hybrid methodology ideas."
+    q_exp = "Design a rigorous empirical experiment protocol, benchmark baselines, and ablation study."
+    
+    with col1:
+        if st.button("📖 **Literature Review Synthesis**\n\nSynthesize related works, thematic taxonomies & cross-paper trends", use_container_width=True, key="sugg_1"):
+            st.session_state["agent_mode"] = "📖 Literature Review"
+            clicked_prompt = q_lit
+        if st.button("💡 **Novel Research Ideas**\n\nBrainstorm high-impact research hypotheses & hybrid methodologies", use_container_width=True, key="sugg_2"):
+            st.session_state["agent_mode"] = "💡 Research Ideas"
+            clicked_prompt = q_idea
+    with col2:
+        if st.button("🔬 **Research Gaps & Limitations**\n\nIdentify unresolved challenges, bottlenecks & future directions", use_container_width=True, key="sugg_3"):
+            st.session_state["agent_mode"] = "🔬 Research Gaps"
+            clicked_prompt = q_gap
+        if st.button("🧪 **Experimental Design & Protocol**\n\nStructure benchmark baselines, datasets, ablations & evaluation metrics", use_container_width=True, key="sugg_4"):
+            st.session_state["agent_mode"] = "🧪 Experiment Planner"
+            clicked_prompt = q_exp
+else:
+    # Render active conversation inside bounded height container
+    chat_box = st.container(height=520, border=False)
+    with chat_box:
         # Display Conversation History starting from top
         for msg_idx, msg in enumerate(st.session_state.messages):
             with st.chat_message(msg["role"]):
